@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Set Argument for configurable versions (using `--build-arg`)
+# ─────────────────────────────────────────────────────────────────────────────
+ARG UBUNTU_VERSION=22.04
+ARG TERRAFORM_VERSION=1.11.3
+ARG ANSIBLE_VERSION=5.0.0
+ARG NODE_VERSION=20
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. Setup base image and metadata
+# ─────────────────────────────────────────────────────────────────────────────
+FROM ubuntu:${UBUNTU_VERSION} AS base
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. Skips timezone configuration prompt for tz
+# ─────────────────────────────────────────────────────────────────────────────
+ARG DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=${DEBIAN_FRONTEND} \
+TZ=Asia/Jakarta
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. Install common dependencies
+# ─────────────────────────────────────────────────────────────────────────────
+RUN apt update && \
+    apt install -y --no-install-recommends \
+    curl \
+    wget \
+    ca-certificates \
+    gnupg \
+    lsb-release \
+    xz-utils \
+    software-properties-common
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. Install terraform
+# ─────────────────────────────────────────────────────────────────────────────
+RUN wget -O - https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg && \
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/hashicorp.list && \
+apt update && apt install -y --no-install-recommends terraform
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Install Ansible
+# ─────────────────────────────────────────────────────────────────────────────
+RUN add-apt-repository --yes --update ppa:ansible/ansible && \
+apt install -y --no-install-recommends ansible
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. Install NodeJS
+# ─────────────────────────────────────────────────────────────────────────────
+RUN curl -fsSL https://nodejs.org/dist/v22.15.0/node-v22.15.0-linux-x64.tar.xz | tar -xJ -C /usr/local --strip-components=1

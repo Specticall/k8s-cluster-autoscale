@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: autoscale-env
+  namespace: autoscale
+data:
+  .env: |
+    RABBIT_MQ_URL="amqp://rabbitmq-srv"
+    NODE_VM_ADMIN_USERNAME="worker"
+    NODE_VM_SSH_PRIVATE_KEY_PATH=`/app/secret/.ssh/k8s-key`
+    MASTER_VM_AZURE_NAME="k8s-master-0-vm"
+    MASTER_VM_ADMIN_USERNAME="master"
+    MASTER_VM_IP="20.255.57.25"
+    MAX_VM_COUNT_PER_REGION=2
+    API_PORT=8000
+    IS_PRODUCTION=false
+    MASTER_VM_SSH_PRIVATE_KEY_PATH="/app/secret/.ssh/k8s-master-1-key.pem"

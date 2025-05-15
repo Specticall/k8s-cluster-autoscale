@@ -1,0 +1,19 @@
+apiVersion: skaffold/v4beta3
+kind: Config
+manifests:
+  # Kubernetes resource that needs to be managed by skaffold
+  # (Infra resources only needs to start once e.g. rabbitmq)
+  rawYaml:
+    - ./k8s/autoscaler/*
+build:
+  local:
+    push: false
+  artifacts:
+    - image: josephyusmita/k8s-cluster-autoscale
+      context: core
+      docker:
+        dockerfile: Dockerfile
+      sync:
+        manual:
+          - src: /api/src/**/*.ts
+            dest: .

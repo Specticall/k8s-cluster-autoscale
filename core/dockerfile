@@ -1,0 +1,33 @@
+# 1. Base image with Terraform, Ansible, Node, Azure CLI
+FROM josephyusmita/terraform-ansible-node:latest AS base
+
+# Install Azure CLI (only re-runs if this layer changes)
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+
+# Copy Azure creds (only re-runs if creds change)
+# [HACK INFO] :
+# The ideal way to login to azure CLI in a containerized enviroment is by using a service principal because otherwise, would to use the `az login` interactively which is not ideal for containerized services. Since we current don't have the permission to create a service principal a hack we can do it login from the host machine (in WSL / Docker) which generates credentials that we can then copy to `azure-creds` from ~/.azure (host)
+COPY secret/azure-creds /root/.azure
+
+# Mount public key
+COPY secret/k8s-key.pub /app/secret/
+
+# Install ssh agent and mount ssh keys
+RUN apt update && apt install -y openssh-client
+COPY secret /root/.ssh
+RUN chmod 600 /root/.ssh/*
+
+# Terraform init
+WORKDIR /app/terraform
+COPY terraform/ .
+RUN terraform init
+
+# Copy only package manifests first to leverage cache
+WORKDIR /app/api
+COPY api/package.json .
+RUN npm install
+
+COPY ansible /app/ansible
+COPY api/ .
+
+CMD ["npm", "start"]

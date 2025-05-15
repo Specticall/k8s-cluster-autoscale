@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autoscale-depl
+  namespace: autoscale
+spec:
+  selector:
+    matchLabels:
+      app: autoscale
+  template:
+    metadata:
+      labels:
+        app: autoscale
+    spec:
+      initContainers:
+        - name: wait-for-rabbit-mq
+          image: busybox
+          command:
+            - sh
+            - -c
+            - >
+              until nc -z rabbitmq-srv 5672; do
+                echo "Waiting for rabbitmq-srv...";
+                sleep 5;
+              done
+      containers:
+        - name: autoscale
+          image: josephyusmita/k8s-cluster-autoscale
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "2000m"
+            requests:
+              memory: "128Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: api-env
+              mountPath: /app/api/.env
+              subPath: .env
+      volumes:
+        - name: api-env
+          configMap:
+            name: autoscale-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autoscale-srv
+  namespace: autoscale
+spec:
+  type: NodePort
+  selector:
+    app: autoscale
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30080

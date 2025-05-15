@@ -1,0 +1,13 @@
+---
+- name: Detach Worker From Cluster
+  hosts: master
+  tasks:
+    - name: Drain the node
+      shell: kubectl drain {{ item }} --ignore-daemonsets --delete-emptydir-data
+      loop: "{{ worker_nodes }}"
+      ignore_errors: yes
+
+    - name: Remove node from cluster
+      shell: kubectl delete node {{ item }}
+      loop: "{{ worker_nodes }}"
+      ignore_errors: true
